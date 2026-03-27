@@ -57,7 +57,7 @@ Mengecek apakah server berjalan dengan baik.
   }
   ```
 
-### 2. Process Prompt
+### 2. Process Text Prompt
 Mengeksekusi perintah `coco -p "<prompt>"` dan mengembalikan hasilnya.
 
 - **URL:** `/api/process`
@@ -79,24 +79,45 @@ Mengeksekusi perintah `coco -p "<prompt>"` dan mengembalikan hasilnya.
   }
   ```
 
+### 3. Process Image with Prompt
+Mengeksekusi perintah `coco` dengan menyertakan prompt dan sebuah file gambar. File gambar akan di-upload, diproses oleh `coco`, dan kemudian dihapus.
+
+- **URL:** `/api/process-image`
+- **Method:** `POST`
+- **Headers:** `Content-Type: multipart/form-data`
+- **Body (Form Data):**
+  - `image`: (File gambar, max 10MB)
+  - `prompt`: (Opsional) Teks instruksi untuk gambar, default: `"Deskripsikan gambar ini"`
+- **Response Sukses (200 OK):**
+  ```json
+  {
+    "success": true,
+    "command": "coco -p \"Tolong jelaskan gambar ini /path/to/uploaded/image.jpg\"",
+    "output": "Gambar tersebut menampilkan...",
+    "stderr": ""
+  }
+  ```
+
 - **Response Error Umum (400 / 500):**
-  - **400 Bad Request:** Jika `prompt` tidak dikirim atau bukan string.
+  - **400 Bad Request:** Jika `prompt` tidak dikirim (untuk endpoint teks) atau `image` tidak disertakan (untuk endpoint gambar).
   - **500 Auth Required:** Jika `coco` belum login.
   - **500 Not Found:** Jika `coco` CLI tidak ditemukan di PATH.
-  - **500 Timeout:** Jika eksekusi melebihi batas waktu (30 detik).
+  - **500 Timeout:** Jika eksekusi melebihi batas waktu (120 detik).
 
 ## Contoh Penggunaan (cURL)
 
+### Eksekusi Prompt Teks
 Dari terminal lokal Anda:
 ```bash
 curl -s -X POST -H "Content-Type: application/json" -d '{"prompt":"hello"}' http://localhost:3000/api/process
 ```
 
-Dari perangkat lain di jaringan yang sama:
+### Upload dan Analisis Gambar
+Pastikan Anda memiliki file gambar (misalnya `test.jpg`):
 ```bash
-curl -s -X POST -H "Content-Type: application/json" -d '{"prompt":"hello"}' http://192.168.x.x:3000/api/process
+curl -s -X POST -F "image=@/path/to/test.jpg" -F "prompt=Tolong analisa kode yang ada di screenshot ini" http://localhost:3000/api/process-image
 ```
 
 ## Keamanan
 
-⚠️ **Peringatan Penting:** Aplikasi ini menjalankan perintah shell secara langsung (`child_process.execFile`). Aplikasi ini harus digunakan secara hati-hati di lingkungan jaringan tertutup/lokal yang Anda percayai. Jangan pernah mengekspos aplikasi ini langsung ke internet publik tanpa menambahkan lapisan autentikasi dan otorisasi (misalnya API Key atau JWT).
+⚠️ **Peringatan Penting:** Aplikasi ini menjalankan perintah shell secara langsung (`child_process.exec`). Aplikasi ini harus digunakan secara hati-hati di lingkungan jaringan tertutup/lokal yang Anda percayai. Jangan pernah mengekspos aplikasi ini langsung ke internet publik tanpa menambahkan lapisan autentikasi dan otorisasi (misalnya API Key atau JWT).
